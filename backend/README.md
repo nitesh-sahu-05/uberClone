@@ -188,7 +188,6 @@ curl -X GET http://localhost:3000/users/profile \
 ```
 
 ---
-
 # Users — Logout endpoint
 
 GET /users/logout
@@ -217,5 +216,94 @@ Logs the current user out by clearing the auth cookie and blacklisting the token
 curl -X GET http://localhost:3000/users/logout \
   -H "Authorization: Bearer <token>"
 ```
+
+---
+
+# Captains — Register endpoint
+
+POST /captains/register
+
+## 🔧 Description
+
+Allows a new captain to create an account. Request body must include a `fullname` object, an `email`, `password` and `vehicle` details.
+
+## 📌 Endpoint
+
+- Method: `POST`
+- URL: `/captains/register`
+- Headers: `Content-Type: application/json`
+
+## 📥 Request body (JSON)
+
+```json
+{
+  "fullname": {
+    "firstname": "Jane",
+    "lastname": "Smith"        
+  },
+  "email": "jane@example.com",
+  "password": "secret123",
+  "vehicle": {
+    "color": "red",
+    "plate": "ABC123",
+    "capacity": 4,
+    "vehicleType": "car"
+  }
+}
+```
+
+### Field rules
+
+- `fullname.firstname` (string) — **required**, minimum 3 characters
+- `fullname.lastname` (string) — **required**, minimum 3 characters
+- `email` (string) — **required**, must be a valid email
+- `password` (string) — **required**, minimum 6 characters (stored hashed)
+- `vehicle.color` (string) — **required**, minimum 3 characters
+- `vehicle.plate` (string) — **required**, minimum 6 characters
+- `vehicle.capacity` (number) — **required**, must be a number ≥1
+- `vehicle.vehicleType` (string) — **required**, one of `car`, `motorcycle`, `auto`
+
+> Validation is enforced in `routes/captain.routes.js` and password hashing is handled by `model/captain.model.js`.
+
+## ✅ Success response
+
+- Status: `201 Created`
+- Body (example):
+```json
+{
+  "captain": {
+    "_id": "<captainId>",
+    "fullname": { "firstname": "Jane", "lastname": "Smith" },
+    "email": "jane@example.com",
+    "socketId": null,
+    "status": "inactive",
+    "vehicle": {"color":"red","plate":"ABC123","capacity":4,"vehicleType":"car"},
+    "location": {"lat":null,"lng":null}
+  },
+  "token": "<jwt-token>"
+}
+```
+
+- A JWT token valid for 24 hours is returned; the captain model defines `generateAuthToken()`.
+
+## ❗ Error responses
+
+- `400 Bad Request` — validation failed (see `express-validator` format).
+- `400 Bad Request` — captain already exists (duplicate email).
+- `500 Internal Server Error` — database or unexpected errors.
+
+## Example (curl)
+```bash
+curl -X POST http://localhost:3000/captains/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "fullname":{"firstname":"Jane","lastname":"Smith"},
+    "email":"jane@example.com",
+    "password":"secret123",
+    "vehicle":{"color":"red","plate":"ABC123","capacity":4,"vehicleType":"car"}
+  }'
+```
+
+> **Note:** `process.env.JWT_SECRET` must be set before calling this endpoint, as the token is signed using it.
 
 ---
