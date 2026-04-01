@@ -307,3 +307,135 @@ curl -X POST http://localhost:3000/captains/register \
 > **Note:** `process.env.JWT_SECRET` must be set before calling this endpoint, as the token is signed using it.
 
 ---
+# Captains — Login endpoint
+
+POST /captains/login
+
+## 🔧 Description
+Authenticates an existing captain and returns a JWT token. The request body must include an `email` and `password`.
+
+## 📌 Endpoint
+- Method: `POST`
+- URL: `/captains/login`
+- Headers: `Content-Type: application/json`
+
+## 📥 Request body (JSON)
+```json
+{
+  "email": "jane@example.com",
+  "password": "secret123"
+}
+```
+
+### Field rules
+- `email` (string) — **required**, must be a valid email
+- `password` (string) — **required**, minimum 6 characters
+
+> Validation is enforced in `routes/captain.routes.js` and password comparison occurs in `model/captain.model.js`.
+
+## ✅ Success response
+- Status: `200 OK`
+- Body (example):
+```json
+{
+  "token": "<jwt-token>",
+  "captain": {
+    "_id": "<captainId>",
+    "fullname": { "firstname": "Jane", "lastname": "Smith" },
+    "email": "jane@example.com",
+    "socketId": null,
+    "status": "inactive",
+    "vehicle": {"color":"red","plate":"ABC123","capacity":4,"vehicleType":"car"},
+    "location": {"lat":null,"lng":null}
+  }
+}
+```
+
+## ❗ Error responses
+- `400 Bad Request` — validation failed.
+- `401 Unauthorized` — invalid email or password.
+- `500 Internal Server Error` — database or unexpected errors.
+
+## Example (curl)
+```bash
+curl -X POST http://localhost:3000/captains/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email":"jane@example.com",
+    "password":"secret123"
+  }'
+```
+
+---
+
+# Captains — Profile endpoint
+
+GET /captains/profile
+
+## 🔧 Description
+Returns the authenticated captain's profile data. Requires a valid JWT token provided either as a `token` cookie or in the `Authorization` header.
+
+## 📌 Endpoint
+- Method: `GET`
+- URL: `/captains/profile`
+- Headers: `Authorization: Bearer <token>` (or send the token as an HTTP-only cookie named `token`)
+
+## ✅ Success response
+- Status: `200 OK`
+- Body (example):
+```json
+{
+  "captain": {
+    "_id": "<captainId>",
+    "fullname": { "firstname": "Jane", "lastname": "Smith" },
+    "email": "jane@example.com",
+    "socketId": null,
+    "status": "inactive",
+    "vehicle": {"color":"red","plate":"ABC123","capacity":4,"vehicleType":"car"},
+    "location": {"lat":null,"lng":null}
+  }
+}
+```
+
+## ❗ Error responses
+- `401 Unauthorized` — missing or invalid token.
+- `500 Internal Server Error` — unexpected errors.
+
+## Example (curl)
+```bash
+curl -X GET http://localhost:3000/captains/profile \
+  -H "Authorization: Bearer <token>"
+```
+
+---
+
+# Captains — Logout endpoint
+
+GET /captains/logout
+
+## 🔧 Description
+Logs the current captain out by clearing the auth cookie and blacklisting the token (stored for 24h). Requires authentication.
+
+## 📌 Endpoint
+- Method: `GET`
+- URL: `/captains/logout`
+- Headers: `Authorization: Bearer <token>` (or cookie)
+
+## ✅ Success response
+- Status: `200 OK`
+- Body:
+```json
+{ "message": "captain logged out successfully" }
+```
+
+## ❗ Error responses
+- `401 Unauthorized` — missing or invalid token.
+- `500 Internal Server Error` — unexpected errors.
+
+## Example (curl)
+```bash
+curl -X GET http://localhost:3000/captains/logout \
+  -H "Authorization: Bearer <token>"
+```
+
+---

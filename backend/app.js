@@ -20,6 +20,7 @@ app.get('/', (req, res) => {
 });
 
 app.use('/users', userRouter);
-app.use('/captains', captainRouter);
+app.use('/captain', captainRouter); // singular path base
+app.use('/captains', captainRouter); // optional backward compatibility
 
 module.exports = app;

@@ -1,9 +1,11 @@
 const express = require("express");
 const router = express.Router();
 const {body} = require("express-validator");
-const { registerCaptain } = require("../controllers/captain.controller");
+const { registerCaptain, loginCaptain, getCaptainProfile, logoutCaptain } = require("../controllers/captain.controller");
+const { authCaptain } = require("../middlewares/auth.middleware");
+const { get } = require("mongoose");
 
-
+// captaion registration route with validation
 router.post('/register',[
     body('fullname.firstname').isLength({min:3}).withMessage('First name must be at least 3 characters long'),
     body('fullname.lastname').isLength({min:3}).withMessage('Last name must be at least 3 characters long'),
@@ -14,5 +16,18 @@ router.post('/register',[
     body('vehicle.capacity').isNumeric().withMessage('Vehicle capacity must be a number'),
     body('vehicle.vehicleType').isIn(['car','motorcycle','auto']).withMessage('Vehicle type must be car, motorcycle or auto')
 ],registerCaptain);
+
+// captain login route
+router.post('/login',[
+    body('email').isEmail().withMessage('Please fill a valid email address'),
+    body('password').isLength({min:6}).withMessage('Password must be at least 6 characters long')
+],loginCaptain);
+
+
+// captain profile route
+router.get('/profile',authCaptain,getCaptainProfile)
+
+// captain logout route
+router.get('/logout',authCaptain,logoutCaptain)
 
 module.exports = router;
