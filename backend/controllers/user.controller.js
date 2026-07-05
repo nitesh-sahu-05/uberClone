@@ -6,32 +6,38 @@ const {validationResult} = require("express-validator");
 
 //register user controller
 registerUser = async(req,res,next)=>{
-    const errors = validationResult(req);
-    if(!errors.isEmpty()){
-        return res.status(400).json({errors: errors.array()});
-    }
-
-    console.log(req.body);
-    
-    const {fullname,email,password} = req.body;
-
-    const hashedPassword = await userModel.hashPassword(password);
-    const user = await createUser({
-        firstname: fullname.firstname,
-        lastname: fullname.lastname,
-        email,
-        password: hashedPassword
-    });
-
-    const token = user.generateAuthToken();
-
-    res.status(201).json({
-        message: 'user registered successfully',
-        data: {
-            user,
-            token
+    try{
+        const errors = validationResult(req);
+        if(!errors.isEmpty()){
+            return res.status(400).json({errors: errors.array()});
         }
-    });
+
+        const {fullname,email,password} = req.body;
+
+        const hashedPassword = await userModel.hashPassword(password);
+        const user = await createUser({
+            firstname: fullname.firstname,
+            lastname: fullname.lastname,
+            email,
+            password: hashedPassword
+        });
+
+        const token = user.generateAuthToken();
+
+        return res.status(201).json({
+            message: 'user registered successfully',
+            data: {
+                user,
+                token
+            }
+        });
+    }catch(err){
+        console.error('registerUser error:', err);
+        if(err.code && err.code === 11000){
+            return res.status(409).json({message: 'Email already in use'});
+        }
+        return res.status(500).json({message: 'Internal server error'});
+    }
 }
 
 

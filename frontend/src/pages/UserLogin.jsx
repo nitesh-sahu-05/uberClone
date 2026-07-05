@@ -1,23 +1,50 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { UserDataContext } from "../context/UserContext";
+import {useNavigate} from 'react-router-dom';
+import { useContext } from "react";
+import axios from "axios";
 
 const UserLogin = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [userData, setUserData] = useState({});
 
-  const handleSubmit = (e) => {
+  const { user , setUser } = useContext(UserDataContext);
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const newUserData = ({
+    const newUserData = {
       email: email,
-      password: password
-    })
+      password: password,
+    };
     setUserData(newUserData);
     console.log(newUserData);
+
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_BASE_URL}/users/login`,
+        newUserData,
+        { withCredentials: true }
+      );
+
+      if (response.status === 200) {
+        const data = response.data;
+        setUser(data.user);
+        navigate('/home');
+      }
+    } catch (err) {
+      console.error('Login error:', err?.response?.data || err.message);
+      // optionally surface error to user
+      alert(err?.response?.data?.message || 'Login failed');
+    }
+
     setEmail('');
     setPassword('');
   };
 
+  
 
   return (
     <div className="h-screen p-7 flex flex-col justify-between">
