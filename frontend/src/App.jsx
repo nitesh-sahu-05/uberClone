@@ -10,6 +10,7 @@ import UserLogout from './pages/UserLogout'
 import CaptainHome from './pages/CaptainHome'
 import CaptainLogout from './pages/CaptainLogout'
 import Riding from './pages/Riding'
+import CaptainRiding from './pages/CaptainRiding'
 
 const App = () => {
   return (
@@ -25,6 +26,7 @@ const App = () => {
         <Route path='/logout' element={<UserLogout />} />
         <Route path='/captain-logout' element={<CaptainLogout />} />
         <Route path='/captain-home' element={<CaptainHome />} />
+        <Route path='/captain-riding' element={<CaptainRiding/>}/>
       </Routes>
     </div>
   )
