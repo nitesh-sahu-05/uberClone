@@ -7,6 +7,9 @@ const cors = require('cors');
 const connectToDb = require('./db/db');
 const userRouter = require('./routes/user.routes');
 const captainRouter = require('./routes/captain.routes');
+const mapRouter = require('./routes/maps.routes');
+const rideRouter = require('./routes/ride.route');
+
 
 connectToDb();
 
@@ -30,5 +33,7 @@ app.get('/', (req, res) => {
 app.use('/users', userRouter);
 app.use('/captain', captainRouter); // singular path base
 app.use('/captains', captainRouter); // optional backward compatibility
+app.use('/maps',mapRouter)
+app.use('/rides',rideRouter)
 
 module.exports = app;
