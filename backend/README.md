@@ -49,6 +49,257 @@ Registers a new user and returns an auth token. Request body must include a `ful
 ```
 - Note: the JWT `token` is created with a 1 day expiry (see `user.model.js`). Passwords are hashed before storage.
 
+---
+
+# Maps Endpoints
+
+## 1️⃣ Get Coordinates — Convert address to latitude/longitude
+
+GET /maps/get-coordinate
+
+### 🔧 Description
+Converts a given address string into geographic coordinates (latitude and longitude). Supports Google Maps API as primary provider with OpenStreetMap (Nominatim) as fallback.
+
+### 📌 Endpoint
+- Method: `GET`
+- URL: `/maps/get-coordinate?address=<address>`
+- Headers: `Content-Type: application/json`
+- Authentication: **Required** (user token)
+
+### 📥 Query Parameters
+- `address` (string) — **required**, minimum 3 characters
+
+### ✅ Success response
+- Status: `200 OK`
+- Body (example):
+```json
+{
+  "ltd": 28.6139,
+  "lang": 77.2090
+}
+```
+
+### ❌ Error response
+- Status: `400 Bad Request` (invalid input)
+- Status: `404 Not Found` (coordinates not found)
+- Body (example):
+```json
+{
+  "message": "coordinate not found",
+  "err": {}
+}
+```
+
+---
+
+## 2️⃣ Get Distance and Time — Calculate route details between two locations
+
+GET /maps/get-distance-time
+
+### 🔧 Description
+Calculates the distance and estimated travel time between an origin and destination. Uses Google Maps Distance Matrix API with fallback to Haversine formula for offline calculation.
+
+### 📌 Endpoint
+- Method: `GET`
+- URL: `/maps/get-distance-time?origin=<origin>&destination=<destination>`
+- Headers: `Content-Type: application/json`
+- Authentication: **Required** (user token)
+
+### 📥 Query Parameters
+- `origin` (string) — **required**, minimum 3 characters
+- `destination` (string) — **required**, minimum 3 characters
+
+### ✅ Success response
+- Status: `200 OK`
+- Body (example):
+```json
+{
+  "distance": "15.3 km",
+  "duration": "22 mins",
+  "distanceValue": 15300,
+  "durationValue": 1320
+}
+```
+
+### ❌ Error response
+- Status: `400 Bad Request` (invalid input)
+- Status: `500 Internal Server Error` (calculation failed)
+- Body (example):
+```json
+{
+  "message": "Unable to fetch distance and time"
+}
+```
+
+---
+
+## 3️⃣ Auto Suggestions — Get location suggestions based on input
+
+GET /maps/auto-suggestion
+
+### 🔧 Description
+Returns a list of location suggestions as the user types. Uses Google Maps Places Autocomplete API with OpenStreetMap (Nominatim) as fallback. Gracefully degrades to basic suggestions if external services fail.
+
+### 📌 Endpoint
+- Method: `GET`
+- URL: `/maps/auto-suggestion?input=<input>`
+- Headers: `Content-Type: application/json`
+- Authentication: **Not Required**
+
+### 📥 Query Parameters
+- `input` (string) — **required**, minimum 3 characters
+
+### ✅ Success response
+- Status: `200 OK`
+- Body (example):
+```json
+[
+  {
+    "description": "New Delhi, India",
+    "placeId": "ChIJLc6uI0R02jkR3-n2OMI-ZzA",
+    "lat": "28.6139",
+    "lng": "77.2090"
+  },
+  {
+    "description": "Dwarka, Delhi, India",
+    "placeId": "ChIJ0W6cN3p02jkRyeXIiQdNYXQ",
+    "lat": "28.5926",
+    "lng": "77.0449"
+  }
+]
+```
+
+### ❌ Error response
+- Status: `400 Bad Request` (invalid input, less than 3 characters)
+- Status: `500 Internal Server Error` (server error, returns fallback suggestions)
+- Body (example):
+```json
+{
+  "message": "Unable to fetch location suggestions"
+}
+```
+
+---
+
+# Rides Endpoints
+
+## 1️⃣ Create Ride — Request a new ride
+
+POST /rides/create
+
+### 🔧 Description
+Creates a new ride request with pickup location, destination, and vehicle type. Returns ride details including estimated fare.
+
+### 📌 Endpoint
+- Method: `POST`
+- URL: `/rides/create`
+- Headers: `Content-Type: application/json`
+- Authentication: **Required** (user token)
+
+### 📥 Request Body (JSON)
+```json
+{
+  "pickup": "New Delhi, India",
+  "destination": "Mumbai, India",
+  "vehicleType": "car"
+}
+```
+
+### Field rules
+- `pickup` (string) — **required**, minimum 3 characters
+- `destination` (string) — **required**, minimum 3 characters
+- `vehicleType` (string) — **required**, must be one of: `"auto"`, `"car"`, `"motorcycle"`
+
+### ✅ Success response
+- Status: `201 Created`
+- Body (example):
+```json
+{
+  "ride": {
+    "_id": "<rideId>",
+    "user": "<userId>",
+    "pickup": "New Delhi, India",
+    "destination": "Mumbai, India",
+    "vehicleType": "car",
+    "fare": 1500,
+    "status": "requested",
+    "createdAt": "2026-07-20T10:30:00.000Z"
+  }
+}
+```
+
+### ❌ Error response
+- Status: `400 Bad Request` (validation error)
+- Status: `500 Internal Server Error` (server error)
+- Body (example):
+```json
+{
+  "errors": [
+    {
+      "msg": "invailid pickup location",
+      "param": "pickup"
+    }
+  ]
+}
+```
+
+---
+
+## 2️⃣ Get Fare — Calculate ride fare between two locations
+
+GET /rides/get-fare
+
+### 🔧 Description
+Calculates the estimated fare for a ride between pickup and destination based on distance and vehicle type.
+
+### 📌 Endpoint
+- Method: `GET`
+- URL: `/rides/get-fare?pickup=<pickup>&destination=<destination>&vehicleType=<vehicleType>`
+- Headers: `Content-Type: application/json`
+- Authentication: **Required** (user token)
+
+### 📥 Query Parameters
+- `pickup` (string) — **required**, minimum 3 characters
+- `destination` (string) — **required**, minimum 3 characters
+- `vehicleType` (string) — optional, one of: `"auto"`, `"car"`, `"motorcycle"`
+
+### ✅ Success response
+- Status: `200 OK`
+- Body (example):
+```json
+{
+  "fare": 450
+}
+```
+
+### ❌ Error response
+- Status: `400 Bad Request` (invalid input)
+- Status: `500 Internal Server Error` (fare calculation failed)
+- Body (example):
+```json
+{
+  "message": "Unable to calculate fare"
+}
+```
+
+---
+
+## 📝 Environment Variables
+Ensure these are set in your `.env` file:
+- `MONGO_URI` — MongoDB connection string
+- `JWT_SECRET` — Secret key for JWT tokens
+- `GOOGLE_MAPS_API_KEY` — (Optional) Google Maps API key for primary geocoding and distance services
+- `PORT` — Server port (default: 3000)
+
+---
+
+## 🔐 Authentication
+- User endpoints require a valid JWT token in cookies or `Authorization` header (`Bearer <token>`)
+- Maps `/auto-suggestion` endpoint is **public** (no authentication required)
+- Other maps and rides endpoints require **user authentication**
+
+
+
 ## ❗ Error responses
 - `400 Bad Request` — validation failed. Response shape from `express-validator`:
 ```json

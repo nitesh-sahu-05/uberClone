@@ -1,6 +1,6 @@
 const crypto = require("crypto");
 const rideModel = require("../model/ride.model");
-const { getDistanceTime } = require("./maps.service");
+const { getAddressCoordinate, getDistanceTime, getCaptainInTheRadius } = require("./maps.service");
 
 const fareRates = {
     auto: { baseFare: 30, perKm: 12 },
@@ -60,8 +60,15 @@ module.exports.createRide = async function createRide({ user, pickup, destinatio
         throw new Error('All fields are required');
     }
 
-    const fareDetails = await module.exports.getFare(pickup, destination, vehicleType);
+    const normalizedVehicleType = String(vehicleType || 'auto').toLowerCase();
+    const fareDetails = await module.exports.getFare(pickup, destination, normalizedVehicleType);
     const otp = await module.exports.genOTP(6);
+
+    const pickupCoordinates = await getAddressCoordinate(pickup);
+    const nearestCaptain = await getCaptainInTheRadius(pickupCoordinates.ltd, pickupCoordinates.lang, 10);
+    const matchingCaptain = nearestCaptain && nearestCaptain.vehicle?.vehicleType === normalizedVehicleType
+        ? nearestCaptain
+        : null;
 
     const ride = await rideModel.create({
         user,
@@ -69,11 +76,21 @@ module.exports.createRide = async function createRide({ user, pickup, destinatio
         destination,
         otp,
         fare: fareDetails.fare,
+        captain: matchingCaptain?._id || undefined,
     });
 
     return {
         ...ride.toObject(),
         otp,
+        nearestCaptain: matchingCaptain
+            ? {
+                _id: matchingCaptain._id,
+                fullname: matchingCaptain.fullname,
+                vehicle: matchingCaptain.vehicle,
+                location: matchingCaptain.location,
+                distanceKm: Number(matchingCaptain.distanceKm?.toFixed(2)),
+            }
+            : null,
     };
 };
 
