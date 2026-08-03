@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const { body } = require("express-validator");
-const { createRide } = require("../controllers/ride.controller");
+const { body,query } = require("express-validator");
+const { createRide, getFare } = require("../controllers/ride.controller");
 const authMiddleware = require("../middlewares/auth.middleware");
 
 router.post(
@@ -12,5 +12,13 @@ router.post(
   body("vehicleType").isString().isIn(["auto", "car", "motorcycle"]).withMessage("vehicle type is required"),
   createRide
 );
+
+router.get('/get-fare',
+  authMiddleware.authUser,
+  query('pickup').isString().isLength({min:3}).withMessage("invalid pickup location"),
+  query('destination').isString().isLength({min:3}).withMessage("invalid destination"),
+  query('vehicleType').optional().isIn(['auto', 'car', 'motorcycle']).withMessage("vehicle type must be auto, car or motorcycle"),
+  getFare
+)
 
 module.exports = router;

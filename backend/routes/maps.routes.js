@@ -9,6 +9,6 @@ router.get('/get-distance-time', query('origin').isString().isLength({ min: 3 })
     query('destination').isString().isLength({ min: 3 }),
     authMiddleware.authUser, getDistanceTime)
 
-router.get('/auto-suggestion', query('input').isString().isLength({ min: 3 }), authMiddleware.authUser, getAutoSuggestions)
+router.get('/auto-suggestion', query('input').isString().isLength({ min: 3 }), getAutoSuggestions)
 
 module.exports = router
